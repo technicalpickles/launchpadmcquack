@@ -11,7 +11,7 @@ require "eventmachine"
 bpm = 160
 period_in_seconds = 60 / bpm.to_f
 
-puts "#{bpm} bpm, #{interval} interval"
+puts "#{bpm} bpm, #{period_in_seconds} interval"
 EventMachine.run do
   trap("SIGINT") { throw :ctrl_c }
 
