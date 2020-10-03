@@ -1,6 +1,6 @@
 # launchpad
 
-![](docs/launchpadmcquack.png)
+![](doc/launchpadmcquack.png)
 
 Prototype step sequencer controlled via a Launchpad X.
 
