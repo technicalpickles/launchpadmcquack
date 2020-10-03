@@ -10,11 +10,18 @@ class Launchpad
       require "midi-message"
 
       # use second Novation Launchpad output, should be LPX MIDI output
-      launchpad_devices = UniMIDI::Output.all.select { |output|
+      launchpad_outputs = UniMIDI::Output.all.select { |output|
         output.name == "Focusrite - Novation Launchpad X"
       }
 
-      return if (@output = launchpad_devices.last)
+      # use second Novation Launchpad input, should be LPX MIDI input
+      launchpad_inputs = UniMIDI::Input.all.select { |output|
+        output.name == "Focusrite - Novation Launchpad X"
+      }
+
+      @output = launchpad_outputs.last
+      @input = launchpad_inputs.last
+      return if @output && @input
 
       raise ArgumentError, "no device connected"
     end
@@ -25,6 +32,20 @@ class Launchpad
 
     def puts(channel, velocity, note)
       @output.puts message_for(channel, velocity, note).to_hex_s
+    end
+
+    def gets
+      @input.gets.reject { |event|
+        # don't try to handle things longer than 4 bytes, which is all midi message handles
+        event[:data].size > 4
+      }.map { |event|
+        MIDIMessage.parse event[:data]
+      }.select { |message|
+        message.kind_of?(MIDIMessage::NoteOn)
+      }.reject { |message|
+        # release triggers as velocity 0 for some reason
+        message.velocity == 0
+      }
     end
   end
 
@@ -134,6 +155,31 @@ class Launchpad
     end
   end
 
+  def gets
+    @backend.gets
+  end
+
+  def handle_presses
+    gets.each do |message|
+      handle_press(message)
+    end
+  end
+
+  def handle_press(message)
+    index = self.class.note_to_index(message.note)
+
+    previous_state = @state[*index]
+    new_state = !previous_state
+    if new_state
+      light_position(:static, 60, index)
+    else
+      light_position(:static, 0, index)
+    end
+    @state[*index] = new_state
+
+    puts "#{index}: #{new_state}"
+  end
+
   def self.run!(_argv = [])
     require "pry"
     pry Launchpad.setup(self)
@@ -144,6 +190,9 @@ class Launchpad
 
     def initialize
       @state = Matrix.zero(8)
+      @state.each_with_index do |value, x, y|
+        @state[x, y] = false
+      end
     end
 
     def each(*args, &block)

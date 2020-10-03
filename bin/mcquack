@@ -12,14 +12,20 @@ bpm = 160
 period_in_seconds = 60 / bpm.to_f
 
 puts "#{bpm} bpm, #{period_in_seconds} interval"
-EventMachine.run do
-  trap("SIGINT") { throw :ctrl_c }
+EventMachine.run {
+  trap("SIGINT") {
+    EventMachine.stop_event_loop
+  }
 
   EventMachine.add_shutdown_hook do
     @launchpad.off
   end
 
-  EventMachine.add_periodic_timer(period_in_seconds) do
-    @launchpad.tick
-  end
-end
+  # @tick_timer = EventMachine.add_periodic_timer(period_in_seconds) do
+  #   @launchpad.tick
+  # end
+
+  @note_timer = EventMachine.add_periodic_timer(0.02) {
+    @launchpad.handle_presses
+  }
+}
