@@ -170,20 +170,36 @@ class Launchpad
       @state[x, y] = 1
     end
   end
-end
 
-@launchpad = Launchpad.setup(self)
-@launchpad.off
+  def tick
+    thread = Thread.current
+    unless thread.key?(:counter)
+      thread[:counter] = 0
+    end
 
-@launchpad.state.each_with_index do |state, x, y|
-  @launchpad.state[x, y] = rand(2)
-end
+    beat = thread[:counter] % 8
+    previous_beat = beat - 1
 
-@launchpad.state.each_with_index do |state, x, y|
-  puts "x=#{x}, y=#{y}"
-  if state == 1
-    @launchpad.light_position(:static, 20, [x, y])
-  else
-    @launchpad.light_position(:static, 0, [x, y])
+    puts "#{beat + 1} #{"and" unless beat == 7}"
+    light_row(:static, 0, previous_beat)
+    light_row(:static, 40, beat)
+
+    thread[:counter] = thread[:counter] + 1
   end
 end
+
+# @launchpad = Launchpad.setup(self)
+# @launchpad.off
+
+# @launchpad.state.each_with_index do |state, x, y|
+#   @launchpad.state[x, y] = rand(2)
+# end
+
+# @launchpad.state.each_with_index do |state, x, y|
+#   puts "x=#{x}, y=#{y}"
+#   if state == 1
+#     @launchpad.light_position(:static, 20, [x, y])
+#   else
+#     @launchpad.light_position(:static, 0, [x, y])
+#   end
+# end

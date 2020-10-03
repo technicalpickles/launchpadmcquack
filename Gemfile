@@ -10,5 +10,6 @@ gem "ffi-coremidi"
 gem "midi-message"
 gem "pry"
 gem "unimidi"
+gem "eventmachine"
 
 gem "standard", group: %i[development test]

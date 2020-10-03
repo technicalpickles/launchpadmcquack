@@ -3,4 +3,23 @@
 $LOAD_PATH.unshift File.join(File.dirname(__FILE__), "..", "lib")
 require "launchpad_mcquack"
 
-Launchpad.run!(ARGV)
+require "eventmachine"
+
+@launchpad = Launchpad.setup
+@launchpad.off
+
+bpm = 160
+period_in_seconds = 60 / bpm.to_f
+
+puts "#{bpm} bpm, #{interval} interval"
+EventMachine.run do
+  trap("SIGINT") { throw :ctrl_c }
+
+  EventMachine.add_shutdown_hook do
+    @launchpad.off
+  end
+
+  EventMachine.add_periodic_timer(period_in_seconds) do
+    @launchpad.tick
+  end
+end
