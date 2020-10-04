@@ -273,12 +273,19 @@ class Launchpad
     end
 
     beat = thread[:counter] % 8
+    EventMachine.defer do
+      play_row(beat)
+    end
+
     previous_beat = beat - 1 # this will correctly work when it's negative, thanks ruby!
 
-    # puts "#{beat + 1} #{"and" unless beat == 7}"
-    light_row_to_state(:static, POSITION_ENABLED_COLOR, previous_beat)
-    light_row(:static, BEAT_COLOR, beat)
-    play_row(beat)
+    EventMachine.defer do
+      light_row_to_state(:static, POSITION_ENABLED_COLOR, previous_beat)
+    end
+
+    EventMachine.defer do
+      light_row(:static, BEAT_COLOR, beat)
+    end
 
     thread[:counter] = thread[:counter] + 1
   end
