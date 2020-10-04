@@ -29,8 +29,6 @@ if options[:pry]
   exit 0
 end
 
-trap("SIGINT") do
-  EventMachine.stop_event_loop
-end
+
 
 @launchpad.run!

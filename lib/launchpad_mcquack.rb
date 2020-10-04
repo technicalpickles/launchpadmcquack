@@ -3,67 +3,16 @@
 require "matrix"
 
 class Launchpad
-  class UniMIDIBackend
-    def initialize
-      # defer loading to this point
-      require "unimidi"
-      require "midi-message"
-
-      # use second Novation Launchpad output, should be LPX MIDI output
-      launchpad_outputs = UniMIDI::Output.all.select { |output|
-        output.name == "Focusrite - Novation Launchpad X"
-      }
-
-      # use second Novation Launchpad input, should be LPX MIDI input
-      launchpad_inputs = UniMIDI::Input.all.select { |output|
-        output.name == "Focusrite - Novation Launchpad X"
-      }
-
-      @output = launchpad_outputs.last
-      @input = launchpad_inputs.last
-      return if @output && @input
-
-      raise ArgumentError, "no device connected"
-    end
-
-    def message_for(channel, velocity, note)
-      MIDIMessage.with(channel: channel, velocity: velocity) { note_on(note) }
-    end
-
-    def puts(channel, velocity, note)
-      @output.puts message_for(channel, velocity, note).to_hex_s
-    end
-
-    def gets
-      @input.gets.reject { |event|
-        # don't try to handle things longer than 4 bytes, which is all midi message handles
-        event[:data].size > 4
-      }.map { |event|
-        MIDIMessage.parse event[:data]
-      }.select { |message|
-        message.is_a?(MIDIMessage::NoteOn)
-      }.reject { |message|
-        # release triggers as velocity 0 for some reason
-        message.velocity == 0
-      }
-    end
-  end
+  autoload :BooleanState, "launchpad_mcquack/boolean_state"
+  autoload :SonicPiBackend, "launchpad_mcquack/backends"
+  autoload :UniMIDIBackend, "launchpad_mcquack/backends"
 
   POSITION_ENABLED_COLOR = 60
   BEAT_COLOR = 40
   COLOR_OFF = 0
 
-  class SonicPiBackend
-    def initialize(runtime)
-      @runtime = runtime
-      @launchpad_out = "launchpad_x_lpx_midi_in"
-    end
-
-    def puts(channel, velocity, note)
-      @runtime.midi_note_on(note, velocity, channel: channel, port: @launchpad_out)
-    end
-  end
-
+  # see Launchpad X - Programmer's Reference
+  # https://customer.novationmusic.com/en/support/downloads
   @@notes = Matrix[
     [81, 71, 61, 51, 41, 31, 21, 11],
     [82, 72, 62, 52, 42, 32, 22, 12],
@@ -109,6 +58,7 @@ class Launchpad
     when :static then 0
     when :flashing then 1
     when :pulsing then 2
+    when 0, 1, 2 then color_mode
     else
       raise ArgumentError, "unsupport color mode #{color_mode}"
     end
@@ -153,7 +103,6 @@ class Launchpad
   def play_row(column)
     @@notes.column(column).each_with_index do |note, i|
       if @state.note_on?(note)
-        # TODO different channels?
         @output.puts MIDIMessage.with(channel: i, velocity: 100) { note_on(note) }
       end
     end
@@ -197,16 +146,16 @@ class Launchpad
   end
 
   def handle_press(message)
-    index = self.class.note_to_index(message.note)
+    x, y = self.class.note_to_index(message.note)
 
-    previous_state = @state[*index]
+    previous_state = @state[x, y]
     new_state = !previous_state
     if new_state
       light_position(:static, POSITION_ENABLED_COLOR, index)
     else
       light_position(:static, COLOR_OFF, index)
     end
-    @state[*index] = new_state
+    @state[x, y] = new_state
 
     # puts "#{index}: #{new_state}"
   end
@@ -217,62 +166,17 @@ class Launchpad
 
     puts "#{bpm} bpm, #{period_in_seconds} interval"
     EventMachine.run do
+      trap("SIGINT") do
+        EventMachine.stop_event_loop
+        off
+      end
+
       @tick_timer = EventMachine.add_periodic_timer(period_in_seconds) {
         tick
       }
 
       @note_timer = EventMachine.add_periodic_timer(0.02) {
         handle_presses
-      }
-    end
-  end
-
-  class BooleanState
-    include Enumerable
-
-    def initialize
-      @state = Matrix.zero(8)
-      @state.each_with_index do |value, x, y|
-        @state[x, y] = false
-      end
-    end
-
-    def each(*args, &block)
-      @state.each(*args, &block)
-    end
-
-    def each_with_index(*args, &block)
-      @state.each_with_index(*args, &block)
-    end
-
-    def note_on?(note)
-      index = Launchpad.note_to_index(note)
-      @state[*index]
-    end
-
-    def [](x, y)
-      @state[x, y]
-    end
-
-    def []=(x, y, value)
-      @state[x, y] = value
-    end
-
-    def turn_on(x, y)
-      @state[x, y] = 1
-    end
-
-    def turn_off(x, y)
-      @state[x, y] = 1
-    end
-
-    def column_colors(column, color)
-      @state.column(column).map { |state|
-        if state
-          color
-        else
-          0
-        end
       }
     end
   end
