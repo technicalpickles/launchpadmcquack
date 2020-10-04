@@ -25,9 +25,9 @@ EventMachine.run {
     @launchpad.off
   end
 
-  @tick_timer = EventMachine.add_periodic_timer(period_in_seconds) do
+  @tick_timer = EventMachine.add_periodic_timer(period_in_seconds) {
     @launchpad.tick
-  end
+  }
 
   @note_timer = EventMachine.add_periodic_timer(0.02) {
     @launchpad.handle_presses

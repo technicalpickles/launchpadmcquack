@@ -135,7 +135,7 @@ class Launchpad
         color
       end
 
-      puts "#{note}: #{color_mode} #{local_color}"
+      # puts "#{note}: #{color_mode} #{local_color}"
       light_note(color_mode, local_color, note)
     end
   end
@@ -208,7 +208,7 @@ class Launchpad
     end
     @state[*index] = new_state
 
-    puts "#{index}: #{new_state}"
+    # puts "#{index}: #{new_state}"
   end
 
   def self.run!(_argv = [])
@@ -273,9 +273,9 @@ class Launchpad
     end
 
     beat = thread[:counter] % 8
-    previous_beat = beat - 1
+    previous_beat = beat - 1 # this will correctly work when it's negative, thanks ruby!
 
-    puts "#{beat + 1} #{"and" unless beat == 7}"
+    # puts "#{beat + 1} #{"and" unless beat == 7}"
     light_row_to_state(:static, POSITION_ENABLED_COLOR, previous_beat)
     light_row(:static, BEAT_COLOR, beat)
     play_row(beat)
