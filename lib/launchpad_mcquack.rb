@@ -211,9 +211,20 @@ class Launchpad
     # puts "#{index}: #{new_state}"
   end
 
-  def self.run!(_argv = [])
-    require "pry"
-    pry Launchpad.setup(self)
+  def run!(argv = [])
+    bpm = 160
+    period_in_seconds = 60 / bpm.to_f
+
+    puts "#{bpm} bpm, #{period_in_seconds} interval"
+    EventMachine.run do
+      @tick_timer = EventMachine.add_periodic_timer(period_in_seconds) {
+        tick
+      }
+
+      @note_timer = EventMachine.add_periodic_timer(0.02) {
+        handle_presses
+      }
+    end
   end
 
   class BooleanState

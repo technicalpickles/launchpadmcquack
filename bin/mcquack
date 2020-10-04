@@ -6,30 +6,31 @@ require "unimidi"
 
 require "eventmachine"
 
+require "optparse"
+
+options = {}
+OptionParser.new { |opts|
+  opts.banner = "Usage: mcquack [options]"
+
+  opts.on("-p", "--pry", "Initialize mcquack, but use pry to get a repl before starting") do |v|
+    options[:pry] = v
+  end
+}.parse!
+
 # ugh hard-coded. coremidi doesn't seem to distinguish between different ports
 @output = UniMIDI::Output.all[3]
 
 @launchpad = Launchpad.setup(output: @output)
 @launchpad.off
 
-bpm = 160
-period_in_seconds = 60 / bpm.to_f
+if options[:pry]
+  pry @launchpad
 
-puts "#{bpm} bpm, #{period_in_seconds} interval"
-EventMachine.run {
-  trap("SIGINT") {
-    EventMachine.stop_event_loop
-  }
+  exit 0
+end
 
-  EventMachine.add_shutdown_hook do
-    @launchpad.off
-  end
+trap("SIGINT") do
+  EventMachine.stop_event_loop
+end
 
-  @tick_timer = EventMachine.add_periodic_timer(period_in_seconds) {
-    @launchpad.tick
-  }
-
-  @note_timer = EventMachine.add_periodic_timer(0.02) {
-    @launchpad.handle_presses
-  }
-}
+@launchpad.run!
