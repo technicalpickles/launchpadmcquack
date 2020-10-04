@@ -2,10 +2,14 @@
 
 $LOAD_PATH.unshift File.join(File.dirname(__FILE__), "..", "lib")
 require "launchpad_mcquack"
+require "unimidi"
 
 require "eventmachine"
 
-@launchpad = Launchpad.setup
+# ugh hard-coded. coremidi doesn't seem to distinguish between different ports
+@output = UniMIDI::Output.all[3]
+
+@launchpad = Launchpad.setup(output: @output)
 @launchpad.off
 
 bpm = 160

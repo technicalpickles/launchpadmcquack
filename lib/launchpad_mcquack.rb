@@ -86,16 +86,17 @@ class Launchpad
   end
 
   attr_accessor :state
-  def initialize(backend:)
+  def initialize(backend:, output:)
     @backend = backend
     @state = BooleanState.new
+    @output = output
   end
 
-  def self.setup(context = nil)
+  def self.setup(context: nil, output: nil)
     if context&.respond_to?(:midi_note_on)
       new(backend: SonicPiBackend.new(context))
     else
-      new(backend: UniMIDIBackend.new)
+      new(backend: UniMIDIBackend.new, output: output)
     end
   end
 
@@ -147,6 +148,15 @@ class Launchpad
   def light_row(color_mode, color, column)
     notes = @@notes.column(column)
     light_notes(color_mode, color, notes)
+  end
+
+  def play_row(column)
+    @@notes.column(column).each_with_index do |note, i|
+      if @state.note_on?(note)
+        # TODO different channels?
+        @output.puts MIDIMessage.with(channel: i, velocity: 100) { note_on(note) }
+      end
+    end
   end
 
   def light_row_to_state(color_mode, color, column)
@@ -224,6 +234,11 @@ class Launchpad
       @state.each_with_index(*args, &block)
     end
 
+    def note_on?(note)
+      index = Launchpad.note_to_index(note)
+      @state[*index]
+    end
+
     def [](x, y)
       @state[x, y]
     end
@@ -263,6 +278,7 @@ class Launchpad
     puts "#{beat + 1} #{"and" unless beat == 7}"
     light_row_to_state(:static, POSITION_ENABLED_COLOR, previous_beat)
     light_row(:static, BEAT_COLOR, beat)
+    play_row(beat)
 
     thread[:counter] = thread[:counter] + 1
   end
