@@ -64,8 +64,8 @@ class Launchpad
     end
   end
 
-  def light_position(color_mode, color, position)
-    note = @@notes[*position]
+  def light_position(color_mode, color, (x, y))
+    note = @@notes[x, y]
     light_note(color_mode, color, note)
   end
 
@@ -151,9 +151,9 @@ class Launchpad
     previous_state = @state[x, y]
     new_state = !previous_state
     if new_state
-      light_position(:static, POSITION_ENABLED_COLOR, index)
+      light_position(:static, POSITION_ENABLED_COLOR, [x, y])
     else
-      light_position(:static, COLOR_OFF, index)
+      light_position(:static, COLOR_OFF, [x, y])
     end
     @state[x, y] = new_state
 
