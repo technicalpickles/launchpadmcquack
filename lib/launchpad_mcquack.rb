@@ -41,7 +41,7 @@ class Launchpad
       }.map { |event|
         MIDIMessage.parse event[:data]
       }.select { |message|
-        message.kind_of?(MIDIMessage::NoteOn)
+        message.is_a?(MIDIMessage::NoteOn)
       }.reject { |message|
         # release triggers as velocity 0 for some reason
         message.velocity == 0
@@ -72,7 +72,6 @@ class Launchpad
   ]
 
   def self.note_to_index(note)
-
     return @notes_to_index[note] if defined?(@notes_to_index)
     @notes_to_index = {}
     @@notes.each_with_index do |note, x, y|
@@ -120,8 +119,19 @@ class Launchpad
   end
 
   def light_notes(color_mode, color, notes)
-    notes.each do |note|
-      light_note(color_mode, color, note)
+    if color.is_a?(Array) || color.is_a?(Vector)
+      raise "mismatch size #{color} vs #{notes}" unless notes.size == color.size
+    end
+
+    notes.each_with_index do |note, i|
+      local_color = if color.is_a?(Array) || color.is_a?(Vector)
+        color[i]
+      else
+        color
+      end
+
+      puts "#{note}: #{color_mode} #{local_color}"
+      light_note(color_mode, local_color, note)
     end
   end
 
@@ -133,6 +143,19 @@ class Launchpad
   def light_row(color_mode, color, column)
     notes = @@notes.column(column)
     light_notes(color_mode, color, notes)
+  end
+
+  def light_row_to_state(color_mode, color, column)
+    notes = @@notes.column(column)
+    colors = @state.column(column).map { |state|
+      if state
+        color
+      else
+        0
+      end
+    }
+
+    light_notes(color_mode, colors, notes)
   end
 
   def notes
@@ -218,6 +241,11 @@ class Launchpad
     def turn_off(x, y)
       @state[x, y] = 1
     end
+
+    # FIXME provide a better abstraction rather than digging for it
+    def column(column)
+      @state.column(column)
+    end
   end
 
   def tick
@@ -230,7 +258,7 @@ class Launchpad
     previous_beat = beat - 1
 
     puts "#{beat + 1} #{"and" unless beat == 7}"
-    light_row(:static, 0, previous_beat)
+    light_row_to_state(:static, 60, previous_beat)
     light_row(:static, 40, beat)
 
     thread[:counter] = thread[:counter] + 1
