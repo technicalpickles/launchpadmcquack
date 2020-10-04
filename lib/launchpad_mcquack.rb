@@ -49,6 +49,10 @@ class Launchpad
     end
   end
 
+  POSITION_ENABLED_COLOR = 60
+  BEAT_COLOR = 40
+  COLOR_OFF = 0
+
   class SonicPiBackend
     def initialize(runtime)
       @runtime = runtime
@@ -157,7 +161,7 @@ class Launchpad
   end
 
   def off
-    light(:static, 0)
+    light(:static, COLOR_OFF)
   end
 
   def light(mode, color)
@@ -188,9 +192,9 @@ class Launchpad
     previous_state = @state[*index]
     new_state = !previous_state
     if new_state
-      light_position(:static, 60, index)
+      light_position(:static, POSITION_ENABLED_COLOR, index)
     else
-      light_position(:static, 0, index)
+      light_position(:static, COLOR_OFF, index)
     end
     @state[*index] = new_state
 
@@ -257,8 +261,8 @@ class Launchpad
     previous_beat = beat - 1
 
     puts "#{beat + 1} #{"and" unless beat == 7}"
-    light_row_to_state(:static, 60, previous_beat)
-    light_row(:static, 40, beat)
+    light_row_to_state(:static, POSITION_ENABLED_COLOR, previous_beat)
+    light_row(:static, BEAT_COLOR, beat)
 
     thread[:counter] = thread[:counter] + 1
   end
