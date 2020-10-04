@@ -147,13 +147,7 @@ class Launchpad
 
   def light_row_to_state(color_mode, color, column)
     notes = @@notes.column(column)
-    colors = @state.column(column).map { |state|
-      if state
-        color
-      else
-        0
-      end
-    }
+    colors = @state.column_colors(column, color)
 
     light_notes(color_mode, colors, notes)
   end
@@ -242,9 +236,14 @@ class Launchpad
       @state[x, y] = 1
     end
 
-    # FIXME provide a better abstraction rather than digging for it
-    def column(column)
-      @state.column(column)
+    def column_colors(column, color)
+      @state.column(column).map { |state|
+        if state
+          color
+        else
+          0
+        end
+      }
     end
   end
 
