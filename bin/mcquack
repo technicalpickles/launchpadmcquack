@@ -24,6 +24,7 @@ OptionParser.new { |opts|
 @launchpad.off
 
 if options[:pry]
+  require "pry"
   pry @launchpad
 
   exit 0

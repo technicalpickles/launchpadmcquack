@@ -1,6 +1,7 @@
 GEM
   remote: https://rubygems.org/
   specs:
+    PriorityQueue (0.1.2)
     alsa-rawmidi (0.3.2)
       ffi (~> 1.0)
     ast (2.4.1)
@@ -9,9 +10,22 @@ GEM
     ffi (1.13.1)
     ffi-coremidi (0.4.1)
       ffi (~> 1.9, >= 1.9.6)
+    gamelan (0.3)
+      PriorityQueue (>= 0.1.2)
     method_source (0.9.2)
+    midi-eye (0.3.10)
+      midi-message (~> 0.4, >= 0.4.4)
+      midi-nibbler (~> 0.2, >= 0.2.2)
+      unimidi (~> 0.4, >= 0.4.6)
     midi-jruby (0.1.6)
     midi-message (0.4.9)
+    midi-nibbler (0.2.4)
+      midi-message (~> 0.4, >= 0.4.4)
+    midi-topaz (0.2.5)
+      gamelan (~> 0, >= 0.3)
+      midi-eye (~> 0.3, >= 0.3.7)
+      midi-message (~> 0.4, >= 0.4.4)
+      unimidi (~> 0.4, >= 0.4.6)
     midi-winmm (0.1.10)
       ffi (>= 1.0)
     parallel (1.19.2)
@@ -55,6 +69,7 @@ DEPENDENCIES
   eventmachine
   ffi-coremidi
   midi-message
+  midi-topaz
   pry
   standard
   unimidi

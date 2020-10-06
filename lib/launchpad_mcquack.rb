@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "matrix"
+require "topaz"
 
 class Launchpad
   autoload :BooleanState, "launchpad_mcquack/boolean_state"
@@ -171,9 +172,11 @@ class Launchpad
         off
       end
 
-      @tick_timer = EventMachine.add_periodic_timer(period_in_seconds) {
+      @clock = Topaz::Clock.new(bpm) {
         tick
       }
+
+      EventMachine.defer { @clock.start }
 
       @note_timer = EventMachine.add_periodic_timer(0.02) {
         handle_presses

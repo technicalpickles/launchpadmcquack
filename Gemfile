@@ -11,5 +11,6 @@ gem "midi-message"
 gem "pry"
 gem "unimidi"
 gem "eventmachine"
+gem "midi-topaz"
 
 gem "standard", group: %i[development test]
