@@ -25,6 +25,14 @@ class Launchpad
     [88, 78, 68, 58, 48, 38, 28, 18]
   ]
 
+  attr_accessor :state
+
+  def initialize(backend:, output:)
+    @backend = backend
+    @state = BooleanState.new
+    @output = output
+  end
+
   def self.note_to_index(note)
     return @notes_to_index[note] if defined?(@notes_to_index)
     @notes_to_index = {}
@@ -33,13 +41,6 @@ class Launchpad
     end
 
     @notes_to_index[note]
-  end
-
-  attr_accessor :state
-  def initialize(backend:, output:)
-    @backend = backend
-    @state = BooleanState.new
-    @output = output
   end
 
   def self.setup(context: nil, output: nil)
@@ -208,19 +209,3 @@ class Launchpad
     thread[:counter] = thread[:counter] + 1
   end
 end
-
-# @launchpad = Launchpad.setup(self)
-# @launchpad.off
-
-# @launchpad.state.each_with_index do |state, x, y|
-#   @launchpad.state[x, y] = rand(2)
-# end
-
-# @launchpad.state.each_with_index do |state, x, y|
-#   puts "x=#{x}, y=#{y}"
-#   if state == 1
-#     @launchpad.light_position(:static, 20, [x, y])
-#   else
-#     @launchpad.light_position(:static, 0, [x, y])
-#   end
-# end
