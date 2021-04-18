@@ -25,9 +25,13 @@ class Launchpad
     [88, 78, 68, 58, 48, 38, 28, 18]
   ]
 
-  attr_accessor :state
-
   def initialize(backend:, output:)
+    @config = YAML.load_file("config/control-surface.yaml")
+
+    @colors_for_row_position_enabled = @config["colors"]["instruments"] || 8.times.map { POSITION_ENABLED_COLOR }
+    @beat_color = @config["colors"]["current_beat"] || BEAT_COLOR
+    @off_beat_color = @config["colors"]["off_beats"] || COLOR_OFF
+
     @backend = backend
     @state = BooleanState.new
     @output = output
@@ -110,9 +114,16 @@ class Launchpad
     end
   end
 
-  def light_row_to_state(color_mode, color, column)
+  def light_row_to_state(color_mode, column)
     notes = @@notes.column(column)
-    colors = @state.column_colors(column, color)
+    colors = []
+    @state.column(column).each_with_index { |state, x|
+      colors << if state
+        @colors_for_row_position_enabled[x]
+      else
+        @off_beat_color
+      end
+    }
 
     light_notes(color_mode, colors, notes)
   end
@@ -122,7 +133,7 @@ class Launchpad
   end
 
   def off
-    light(:static, COLOR_OFF)
+    light(:static, @off_beat_color)
   end
 
   def light(mode, color)
@@ -153,24 +164,22 @@ class Launchpad
     previous_state = @state[x, y]
     new_state = !previous_state
     if new_state
-      light_position(:static, POSITION_ENABLED_COLOR, [x, y])
+      light_position(:static, @colors_for_row_position_enabled[x], [x, y])
     else
-      light_position(:static, COLOR_OFF, [x, y])
+      light_position(:static, @off_beat_color, [x, y])
     end
     @state[x, y] = new_state
-
-    # puts "#{index}: #{new_state}"
   end
 
   def run!(argv = [])
-    bpm = 160
+    bpm = 180
     period_in_seconds = 60 / bpm.to_f
 
     puts "#{bpm} bpm, #{period_in_seconds} interval"
     EventMachine.run do
       trap("SIGINT") do
         EventMachine.stop_event_loop
-        off
+        light(:static, 0)
       end
 
       @clock = Topaz::Clock.new(bpm) {
@@ -199,11 +208,11 @@ class Launchpad
     previous_beat = beat - 1 # this will correctly work when it's negative, thanks ruby!
 
     EventMachine.defer do
-      light_row_to_state(:static, POSITION_ENABLED_COLOR, previous_beat)
+      light_row_to_state(:static, previous_beat)
     end
 
     EventMachine.defer do
-      light_row(:static, BEAT_COLOR, beat)
+      light_row(:static, @beat_color, beat)
     end
 
     thread[:counter] = thread[:counter] + 1

@@ -38,8 +38,12 @@ class Launchpad
       @state[x, y] = 1
     end
 
-    def column_colors(column, color)
-      @state.column(column).map { |state|
+    def column(column)
+      @state.column(column)
+    end
+
+    def column_colors(current_column, color)
+      column(current_column).map { |state|
         if state
           color
         else
